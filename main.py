@@ -6,43 +6,42 @@ import os
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel
 
-app = FastAPI()
+app = FastAPI(
+    title="Cats API",
+    description="This API allows users to enter an integer and returns a corresponding number of cat images",
+    version="3.0.0",
+)
 
-
-class Item(BaseModel):
-    name: str
-    description: Optional[str] = None
-
-
-@app.post("/", response_model=Item, summary="Create an item", response_description="The created item")
-async def create_item(item: Item):
-    """
-    Create an item with all the information:
-
-    - **name**: each item must have a name
-    - **description**: An API that returns cat pics
-
-    """
-    return item
-
-
-@app.get("/{number}")
+@app.get("/{number}", summary="Number of cat pics returned", description="The API will return a number of cat images")
 async def return_images(number: int):
-    dir = "static"
-    parent_dir = '/Users/lenguyen/Desktop/ProjectFastAPI'
-    path = os.path.join(parent_dir, dir)
-
-    if not os.path.exists(path):
-        os.mkdir(path)
-
+    urls = []
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "static")
     for i in range(number):
         location = os.path.join(path, 'cat' + str(i) + '.jpg')
         r = requests.get('https://cataas.com/cat')
         with open(location, 'wb') as f:
             f.write(r.content)
-
-
+        urls.append("http://127.0.0.1:8000/static/cat" + str(i) + ".jpg")
+    return str(urls)
+        
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+class Item(BaseModel):
+    name: str
+    description: Optional[str]
+    number: int
+
+@app.post("/", response_model=Item, summary="Cat API")
+async def create_item(item: Item):
+    """
+    FastAPI Project:
+    - **name**: Cat pics
+    - **description**: This API returns a number of cat images
+    - **number**: The number of cat images returned
+    """
+    return item
+    
+
 
 if __name__ == '__main__':
     app.run()
